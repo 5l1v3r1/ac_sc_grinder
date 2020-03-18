@@ -249,13 +249,13 @@ private:
     state = st;
   }
 
-  // Calculate thresolds for current and power to drop noise in speed sensor
+  // Calculate thresholds for current and power to drop noise in speed sensor
   void process_thresholds()
   {
     float i_sum = 0;
     float p_sum = 0;
 
-    for (uint i = 0; i < buffer_idx; i++)
+    for (uint32_t i = 0; i < buffer_idx; i++)
     {
       i_sum += current_buffer[i];
       p_sum += voltage_buffer[i] * current_buffer[i];

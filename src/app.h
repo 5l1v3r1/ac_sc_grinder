@@ -1,8 +1,7 @@
 #ifndef __APP_H__
 #define __APP_H__
-#ifdef __cplusplus
-  extern "C" {
-#endif
+
+#include <stdint.h>
 
 // Oversampling ratio. Used to define buffer sizes
 #define ADC_FETCH_PER_TICK 8
@@ -23,9 +22,7 @@
 #define CFG_R_INTERP_TABLE_START_ADDR 26
 #define CFG_R_INTERP_TABLE_LENGTH 7
 
-extern void app_start();
+float eeprom_float_read(uint16_t addr, float dflt);
+void eeprom_float_write(uint16_t addr, float val);
 
-#ifdef __cplusplus
-  }
-#endif
 #endif

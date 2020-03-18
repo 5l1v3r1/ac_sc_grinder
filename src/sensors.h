@@ -3,7 +3,6 @@
 
 #include <string.h>
 
-#include "eeprom_float.h"
 #include "config_map.h"
 #include "math/fix16_math.h"
 #include "median.h"

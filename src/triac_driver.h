@@ -2,7 +2,7 @@
 #define __TRIAC_DRIVER__
 
 
-#include "stm32f1xx_hal.h"
+#include "app_hal.h"
 #include "math/fix16_math.h"
 
 #include "sensors.h"
@@ -51,7 +51,7 @@ public:
     if ((triac_open_done && !triac_close_done) &&
         (phase_counter + TRIAC_ZERO_TAIL_LENGTH >= positive_period_in_ticks)) {
       triac_close_done = true;
-      triac_ignition_off();
+      hal::triac_ignition_off();
     }
 
     // If ignition was not yet activated - check if we can do this
@@ -73,7 +73,7 @@ public:
       if ((phase_counter >= ticks_threshold) &&
           (phase_counter + TRIAC_ZERO_TAIL_LENGTH < positive_period_in_ticks)) {
         triac_open_done = true;
-        triac_ignition_on();
+        hal::triac_ignition_on();
       }
     }
 
@@ -93,15 +93,6 @@ private:
 
   bool once_zero_crossed = false;
   bool once_period_counted = false;
-
-  // Helpers to switch triac and update related data.
-  void inline triac_ignition_on() {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-  }
-  void inline triac_ignition_off() {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-  }
-
 
   // Happens on every zero cross
   void rearm()
@@ -124,7 +115,7 @@ private:
 
     // Make sure to disable triac signal, if reset (zero cross) happens
     // immediately after triac enabled
-    triac_ignition_off();
+    hal::triac_ignition_off();
   }
 };
 

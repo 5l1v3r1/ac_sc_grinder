@@ -26,7 +26,7 @@ public:
         HAL_FLASH_Lock();
     }
 
-    uint16_t read_u16(uint8_t bank, uint16_t addr)
+    uint16_t read_u16(uint8_t bank, uint32_t addr)
     {
         void *flash_ptr = (void *)(EEPROM_EMU_FLASH_START + bank*EEPROM_EMU_BANK_SIZE + addr);
 
@@ -38,7 +38,7 @@ public:
         return *(uint16_t *)flash_ptr;
     }
 
-    void write_u16(uint8_t bank, uint16_t addr, uint16_t data)
+    void write_u16(uint8_t bank, uint32_t addr, uint16_t data)
     {
         uint32_t flash_addr = EEPROM_EMU_FLASH_START + bank*EEPROM_EMU_BANK_SIZE + addr;
 

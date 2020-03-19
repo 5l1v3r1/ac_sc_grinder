@@ -193,7 +193,7 @@ public:
       }
 
       // Write result to EEPROM
-      for (int i = 0; i < CFG_R_INTERP_TABLE_LENGTH; i++)
+      for (uint32_t i = 0; i < CFG_R_INTERP_TABLE_LENGTH; i++)
       {
         eeprom_float_write(
           CFG_R_INTERP_TABLE_START_ADDR + i,

@@ -22,7 +22,7 @@
 #define CFG_R_INTERP_TABLE_START_ADDR 26
 #define CFG_R_INTERP_TABLE_LENGTH 7
 
-float eeprom_float_read(uint16_t addr, float dflt);
-void eeprom_float_write(uint16_t addr, float val);
+float eeprom_float_read(uint32_t addr, float dflt);
+void eeprom_float_write(uint32_t addr, float val);
 
 #endif

@@ -369,7 +369,7 @@ private:
           float result = setpoints_approx[idx] * (1.0f - sc) + setpoints_approx[idx + 1] * sc;
 
           // store
-          eeprom_float_write(CFG_RPM_INTERP_TABLE_START_ADDR + i, result);
+          eeprom_float_write(CFG_RPM_INTERP_TABLE_START_ADDR + (uint32_t)i, result);
           break;
         }
       }

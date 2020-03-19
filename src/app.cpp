@@ -16,11 +16,11 @@ Sensors sensors;
 TriacDriver triacDriver(sensors);
 Calibrator calibrator;
 
-float eeprom_float_read(uint16_t addr, float dflt) {
+float eeprom_float_read(uint32_t addr, float dflt) {
   return eeprom.read_float(addr, dflt);
 }
 
-void eeprom_float_write(uint16_t addr, float val) {
+void eeprom_float_write(uint32_t addr, float val) {
   return eeprom.write_float(addr, val);
 }
 ////////////////////////////////////////////////////////////////////////////////

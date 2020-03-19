@@ -167,7 +167,7 @@ class EepromEmu
 public:
     FLASH_DRIVER flash;
 
-    uint32_t read_u32(uint16_t addr, uint32_t dflt)
+    uint32_t read_u32(uint32_t addr, uint32_t dflt)
     {
         if (!initialized) init();
 
@@ -190,7 +190,7 @@ public:
         return dflt;
     }
 
-    void write_u32(uint16_t addr, uint32_t val)
+    void write_u32(uint32_t addr, uint32_t val)
     {
         if (!initialized) init();
 
@@ -203,19 +203,19 @@ public:
         // Check free space and swap banks if needed
         if (next_write_offset + RECORD_SIZE > FLASH_DRIVER::BankSize)
         {
-            move_bank(bank, bank ^ 1, addr);
+            move_bank(bank, bank ^ 1, (uint16_t)addr);
             bank ^= 1;
         }
 
         // Write data
-        flash.write_u16(bank, next_write_offset + 2, addr);
+        flash.write_u16(bank, next_write_offset + 2, (uint16_t)addr);
         flash.write_u16(bank, next_write_offset + 4, val & 0xFFFF);
         flash.write_u16(bank, next_write_offset + 6, (uint16_t)(val >> 16) & 0xFFFF);
         flash.write_u16(bank, next_write_offset + 0, COMMIT_MARK);
         next_write_offset += RECORD_SIZE;
     }
 
-    float read_float(uint16_t addr, float dflt)
+    float read_float(uint32_t addr, float dflt)
     {
         union { uint32_t i; float f; } x;
         x.f = dflt;
@@ -223,7 +223,7 @@ public:
         return x.f;
     }
 
-    void write_float(uint16_t addr, float val)
+    void write_float(uint32_t addr, float val)
     {
         union { uint32_t i; float f; } x;
         x.f = val;

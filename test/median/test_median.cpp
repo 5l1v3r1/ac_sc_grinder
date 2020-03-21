@@ -3,7 +3,7 @@
 #include <unity.h>
 
 #include "../src/math/fix16_math.h"
-#include "../src/median.h"
+#include "../src/math/median.h"
 
 // samples from `/doc/data`
 fix16_t data[] = {

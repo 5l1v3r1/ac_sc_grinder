@@ -3,7 +3,7 @@
 
 
 #include "./fix16_math.h"
-#include "../median.h"
+#include "./median.h"
 
 
 #define STABILITY_FILTER_LENGTH 3

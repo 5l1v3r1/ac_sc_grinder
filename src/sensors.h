@@ -6,7 +6,7 @@
 #include "config_map.h"
 #include "math/fix16_math.h"
 #include "math/truncated_mean.h"
-#include "median.h"
+#include "math/median.h"
 #include "app.h"
 
 /*

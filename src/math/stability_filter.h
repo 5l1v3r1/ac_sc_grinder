@@ -2,8 +2,8 @@
 #define __STABILITY_FILTER_TEMPLATE__
 
 
-#include "./fix16_math.h"
-#include "./median.h"
+#include "fix16_math.h"
+#include "median.h"
 
 
 #define STABILITY_FILTER_LENGTH 3

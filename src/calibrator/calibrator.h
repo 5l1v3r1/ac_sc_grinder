@@ -7,12 +7,12 @@
 #include "math/fix16_math.h"
 #include "yield.h"
 
-#include "app.h"
-#include "triac_driver.h"
-#include "calibrator/calibrator_wait_knob_dial.h"
-#include "calibrator/calibrator_static.h"
-#include "calibrator/calibrator_speed.h"
-#include "calibrator/calibrator_pid.h"
+#include "../app.h"
+#include "../triac_driver.h"
+#include "calibrator_wait_knob_dial.h"
+#include "calibrator_static.h"
+#include "calibrator_speed.h"
+#include "calibrator_pid.h"
 
 extern TriacDriver triacDriver;
 

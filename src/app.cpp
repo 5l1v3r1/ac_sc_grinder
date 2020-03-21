@@ -8,7 +8,7 @@
 #include "speed_controller.h"
 #include "sensors.h"
 #include "triac_driver.h"
-#include "calibrator.h"
+#include "calibrator/calibrator.h"
 
 EepromEmu<EepromFlashDriver> eeprom;
 

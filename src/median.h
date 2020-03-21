@@ -69,7 +69,7 @@ public:
         return;
     }
 
-    // Now we have enougth to start with safe min/max searches.
+    // Now we have enough to start with safe min/max searches.
     T lo_max_val = heap_lo[heap_lo_max_idx];
     T hi_min_val = heap_hi[heap_hi_min_idx];
 

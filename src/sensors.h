@@ -5,6 +5,7 @@
 
 #include "config_map.h"
 #include "math/fix16_math.h"
+#include "math/truncated_mean.h"
 #include "median.h"
 #include "app.h"
 
@@ -129,68 +130,6 @@ private:
   // Motor resistance interpolation table
   fix16_t cfg_r_table[CFG_R_INTERP_TABLE_LENGTH];
 
-  // 1. Calculate σ (discrete random variable)
-  // 2. Drop everything with deviation > 2σ and count mean for the rest.
-  //
-  // https://upload.wikimedia.org/wikipedia/commons/8/8c/Standard_deviation_diagram.svg
-  //
-  // For efficiensy, don't use root square (work with σ^2 instead)
-  //
-  // !!! count sould NOT be > 16
-  //
-  // src - circular buffer
-  // head - index of NEXT data to write
-  // count - number of elements BACK from head to process
-  // window - sigma multiplier (usually [1..2])
-  //
-  // Why this work? We use collision avoiding approach. Interrupt can happen,
-  // but we work with tail, and data is written to head. If bufer is big enougth,
-  // we have time to process tails until override.
-  //
-  uint32_t truncated_mean(uint16_t *src, int count, fix16_t window)
-  {
-    int idx = 0;
-
-    // Count mean & sigma in one pass
-    // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-    idx = count;
-    uint32_t s = 0;
-    uint32_t s2 = 0;
-    while (idx)
-    {
-      int val = src[--idx];
-      s += val;
-      s2 += val * val;
-    }
-
-    int mean = (s + (count >> 1)) / count;
-
-    int sigma_square = (s2 - (s * s / count)) / (count - 1);
-    // quick & dirty multiply to win^2, when win is in fix16 format.
-    // we suppose win is 1..2, and sigma^2 - 24 bits max
-    int sigma_win_square = ((((window >> 8) * (window >> 8)) >> 12) * sigma_square) >> 4;
-
-    // Drop big deviations and count mean for the rest
-    idx = count;
-    int s_mean_filtered = 0;
-    int s_mean_filtered_cnt = 0;
-
-    while (idx)
-    {
-      int val = src[--idx];
-
-      if ((mean - val) * (mean - val) < sigma_win_square)
-      {
-        s_mean_filtered += val;
-        s_mean_filtered_cnt++;
-      }
-    }
-
-    // Protection from zero div. Should never happen
-    if (!s_mean_filtered_cnt) return mean;
-
-    return (s_mean_filtered + (s_mean_filtered_cnt >> 1)) / s_mean_filtered_cnt;
-  }
 
   void fetch_adc_data()
   {

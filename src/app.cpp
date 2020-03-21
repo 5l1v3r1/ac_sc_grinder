@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "app.h"
 #include "app_hal.h"
 #include "adc.h"
@@ -16,6 +17,7 @@ Sensors sensors;
 TriacDriver triacDriver(sensors);
 Calibrator calibrator;
 
+
 float eeprom_float_read(uint32_t addr, float dflt) {
   return eeprom.read_float(addr, dflt);
 }
@@ -23,6 +25,7 @@ float eeprom_float_read(uint32_t addr, float dflt) {
 void eeprom_float_write(uint32_t addr, float val) {
   return eeprom.write_float(addr, val);
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // ADC data is transfered to double size DMA buffer. Interrupts happen on half

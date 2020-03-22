@@ -11,10 +11,7 @@
 #include "../math/fix16_math.h"
 
 #include "../app.h"
-#include "../sensors.h"
 
-
-extern Sensors sensors;
 
 #define KNOB_TRESHOLD F16(0.05)
 
@@ -29,7 +26,7 @@ class CalibratorWaitKnobDial
 {
 public:
 
-    bool tick() {
+    bool tick(io_data_t &io_data) {
         YIELDABLE;
 
         do {
@@ -38,7 +35,7 @@ public:
             ticks_cnt = 0;
             dials_cnt = 0;
 
-            while (IS_KNOB_LOW(sensors.knob)) {
+            while (IS_KNOB_LOW(io_data.knob)) {
                 ticks_cnt++;
                 YIELD(false);
             }
@@ -51,7 +48,7 @@ public:
                 // Measure UP interval
                 ticks_cnt = 0;
 
-                while (IS_KNOB_HIGH(sensors.knob)) {
+                while (IS_KNOB_HIGH(io_data.knob)) {
                     ticks_cnt++;
                     YIELD(false);
                 }
@@ -67,7 +64,7 @@ public:
                 // Measure DOWN interval
                 ticks_cnt = 0;
 
-                while (IS_KNOB_LOW(sensors.knob)) {
+                while (IS_KNOB_LOW(io_data.knob)) {
                     ticks_cnt++;
                     YIELD(false);
                 }

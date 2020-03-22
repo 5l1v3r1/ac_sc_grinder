@@ -7,13 +7,9 @@
 #include "../math/fix16_math.h"
 #include "../math/stability_filter.h"
 
-#include "../sensors.h"
-#include "../triac_driver.h"
+#include "../app.h"
 
 #define R_MEASURE_ATTEMPTS 3
-
-extern Sensors sensors;
-extern TriacDriver triacDriver;
 
 // Array size to record up to half of current & voltage positive wave.
 // Full period is (APP_TICK_FREQUENCY / 50).
@@ -28,23 +24,21 @@ class CalibratorStatic
 {
 public:
 
-    bool tick(void) {
+    bool tick(io_data_t &io_data) {
         YIELDABLE;
 
         //
         // Reset variables and wait 2 sec to make sure motor stopped.
         //
 
-        triacDriver.setpoint = 0;
+        io.setpoint = 0;
         r_interp_table_index = 0;
 
         while (ticks_cnt++ < (2 * APP_TICK_FREQUENCY)) {
-            triacDriver.tick();
             YIELD(false);
         }
 
-        while (!sensors.zero_cross_up) {
-            triacDriver.tick();
+        while (!io_data.zero_cross_up) {
             YIELD(false);
         }
 
@@ -54,11 +48,10 @@ public:
         // Record noise
         //
 
-        while (!sensors.zero_cross_down) {
-            triacDriver.tick();
+        while (!io_data.zero_cross_down) {
             YIELD(false);
-            voltage_buffer[buffer_idx] = fix16_to_float(sensors.voltage);
-            current_buffer[buffer_idx] = fix16_to_float(sensors.current);
+            voltage_buffer[buffer_idx] = fix16_to_float(io_data.voltage);
+            current_buffer[buffer_idx] = fix16_to_float(io_data.current);
             buffer_idx++;
         }
 
@@ -80,15 +73,13 @@ public:
                 zero_cross_down_offset = 0;
 
                 while (ticks_cnt++ < (APP_TICK_FREQUENCY / 2)) {
-                    triacDriver.setpoint = 0;
-                    triacDriver.tick();
+                    io.setpoint = 0;
                     YIELD(false);
                 }
 
                 // Calibration should be started at the begining of positive period
 
-                while (!sensors.zero_cross_up) {
-                    triacDriver.tick();
+                while (!io_data.zero_cross_up) {
                     YIELD(false);
                 }
 
@@ -96,15 +87,14 @@ public:
                 // Record positive wave
                 //
 
-                while (!sensors.zero_cross_down) {
-                    triacDriver.setpoint = sensors.cfg_r_table_setpoints[r_interp_table_index];
-                    triacDriver.tick();
+                while (!io_data.zero_cross_down) {
+                    io.setpoint = meter.cfg_r_table_setpoints[r_interp_table_index];
 
                     // Safety check. Restart on out of bounds.
                     if (buffer_idx >= calibrator_rl_buffer_length) return false;
 
-                    voltage_buffer[buffer_idx] = fix16_to_float(sensors.voltage);
-                    current_buffer[buffer_idx] = fix16_to_float(sensors.current);
+                    voltage_buffer[buffer_idx] = fix16_to_float(io_data.voltage);
+                    current_buffer[buffer_idx] = fix16_to_float(io_data.current);
 
                     buffer_idx++;
 
@@ -118,13 +108,12 @@ public:
                 // (buffer ended or next zero cross found),
                 //
 
-                while (!sensors.zero_cross_up && buffer_idx < calibrator_rl_buffer_length) {
-                    triacDriver.setpoint = 0;
-                    triacDriver.tick();
+                while (!io_data.zero_cross_up && buffer_idx < calibrator_rl_buffer_length) {
+                    io.setpoint = 0;
 
                     // Record current & emulate voltage
                     voltage_buffer[buffer_idx] = - voltage_buffer[buffer_idx - zero_cross_down_offset];
-                    current_buffer[buffer_idx] = fix16_to_float(sensors.current);
+                    current_buffer[buffer_idx] = fix16_to_float(io_data.current);
 
                     buffer_idx++;
 
@@ -136,22 +125,19 @@ public:
                 // setpoint
                 //
 
-                while (!sensors.zero_cross_down) {
-                    triacDriver.tick();
+                while (!io_data.zero_cross_down) {
                     YIELD(false);
                 }
 
-                while (!sensors.zero_cross_up) {
-                    triacDriver.setpoint = sensors.cfg_r_table_setpoints[r_interp_table_index];
-                    triacDriver.tick();
+                while (!io_data.zero_cross_up) {
+                    io.setpoint = meter.cfg_r_table_setpoints[r_interp_table_index];
                     YIELD(false);
                 }
 
                 // Process collected data. That may take a lot of time, but we don't care
                 // about triac at this moment
 
-                triacDriver.setpoint = 0;
-                triacDriver.tick();
+                io.setpoint = 0;
                 YIELD(false);
 
                 r_stability_filter.push(fix16_from_float(calculate_r()));
@@ -181,7 +167,7 @@ public:
         }
 
         // Reload sensor's config.
-        sensors.configure();
+        meter.configure();
         return true;
     }
 
@@ -236,9 +222,9 @@ private:
             p_sum += voltage_buffer[i] * current_buffer[i];
         }
 
-        sensors.cfg_current_offset = fix16_from_float(i_sum / (float)buffer_idx);
+        io.cfg_current_offset = fix16_from_float(i_sum / (float)buffer_idx);
         // Set power treshold 4x of noise value
-        sensors.cfg_min_power_treshold = fix16_from_float(p_sum * 4 / (float)buffer_idx);
+        meter.cfg_min_power_treshold = fix16_from_float(p_sum * 4 / (float)buffer_idx);
     }
 
     float calculate_r()

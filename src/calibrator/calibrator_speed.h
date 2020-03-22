@@ -9,13 +9,6 @@
 #include "../math/stability_filter.h"
 
 #include "../app.h"
-#include "../sensors.h"
-#include "../triac_driver.h"
-#include "../speed_controller.h"
-
-extern Sensors sensors;
-extern TriacDriver triacDriver;
-extern SpeedController speedController;
 
 constexpr int calibrator_motor_startup_ticks = 3 * APP_TICK_FREQUENCY;
 
@@ -24,17 +17,17 @@ class CalibratorSpeed
 {
 public:
 
-    bool tick() {
+    bool tick(io_data_t &io_data) {
         YIELDABLE;
 
         // Reset scaling factor
-        sensors.cfg_rekv_to_speed_factor = fix16_one;
+        meter.cfg_rekv_to_speed_factor = fix16_one;
         setpoint_idx = 0;
 
         do {
             // Pick setpoint value from set of optimal values
             setpoint = setpoints_preset[setpoint_idx];
-            triacDriver.setpoint = setpoint;
+            io.setpoint = setpoint;
 
             speed_tracker.reset();
 
@@ -42,11 +35,10 @@ public:
             do
             {
                 YIELD(false);
-                triacDriver.tick();
 
-                if (!sensors.zero_cross_up) continue;
+                if (!io_data.zero_cross_up) continue;
 
-                speed_tracker.push(sensors.speed);
+                speed_tracker.push(meter.speed);
             } while (!speed_tracker.is_stable_or_exceeded());
 
             // Save rpm value for current setpoint
@@ -59,13 +51,12 @@ public:
         process_data();
 
         // Motor off and wait 1 sec
-        triacDriver.setpoint = 0;
+        io.setpoint = 0;
         ticks_cnt = 0;
 
         while (ticks_cnt++ < 1 * APP_TICK_FREQUENCY)
         {
             YIELD(false);
-            triacDriver.tick();
         }
 
         return true;
@@ -313,8 +304,8 @@ private:
         }
 
         // Reload new config content
-        sensors.configure();
-        speedController.configure();
+        meter.configure();
+        regulator.configure();
     }
 };
 

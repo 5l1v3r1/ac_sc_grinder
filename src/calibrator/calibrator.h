@@ -8,13 +8,10 @@
 #include "yield.h"
 
 #include "../app.h"
-#include "../triac_driver.h"
 #include "calibrator_wait_knob_dial.h"
 #include "calibrator_static.h"
 #include "calibrator_speed.h"
 #include "calibrator_pid.h"
-
-extern TriacDriver triacDriver;
 
 
 class Calibrator
@@ -27,13 +24,13 @@ public:
     // - true:  calibration started, we should stop other actions in main
     //          loop until finished.
     //
-    bool tick() {
+    bool tick(io_data_t &io_data) {
         YIELDABLE;
 
-        YIELD_UNTIL(wait_knob_dial.tick(), false);
-        YIELD_UNTIL(calibrate_static.tick(), true);
-        YIELD_UNTIL(calibrate_speed.tick(), true);
-        YIELD_UNTIL(calibrate_pid.tick(), true);
+        YIELD_UNTIL(wait_knob_dial.tick(io_data), false);
+        YIELD_UNTIL(calibrate_static.tick(io_data), true);
+        YIELD_UNTIL(calibrate_speed.tick(io_data), true);
+        YIELD_UNTIL(calibrate_pid.tick(io_data), true);
 
         return false;
     }

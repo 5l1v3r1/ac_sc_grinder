@@ -7,7 +7,7 @@
 // !!! 1.0 is NOT included
 static inline fix16_t fix16_clamp_zero_one(fix16_t x)
 {
-  return fix16_max(fix16_min(x, F16(1) - 1), 0);
+    return fix16_max(fix16_min(x, F16(1) - 1), 0);
 }
 
 
@@ -22,8 +22,8 @@ static inline fix16_t fix16_clamp_zero_one(fix16_t x)
 //
 fix16_t fix16_sinusize(fix16_t x)
 {
-  fix16_t tmp = fix16_clamp_zero_one(x);
+    fix16_t tmp = fix16_clamp_zero_one(x);
 
-  // 16 bits - fractional part. Need 9 bit for lookup
-  return (fix16_t)(sinusize_table[ tmp >> (16 - SINUSIZE_TABLE_SIZE_BITS) ]);
+    // 16 bits - fractional part. Need 9 bit for lookup
+    return (fix16_t)(sinusize_table[ tmp >> (16 - SINUSIZE_TABLE_SIZE_BITS) ]);
 }

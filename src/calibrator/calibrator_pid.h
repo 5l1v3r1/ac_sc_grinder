@@ -389,12 +389,12 @@ public:
         //
 
         eeprom_float_write(
-          CFG_PID_P_ADDR,
-          fix16_to_float(pid_p_calibrated_value)
+            CFG_PID_P_ADDR,
+            fix16_to_float(pid_p_calibrated_value)
         );
         eeprom_float_write(
-          CFG_PID_I_ADDR,
-          fix16_to_float(pid_i_calibrated_value)
+            CFG_PID_I_ADDR,
+            fix16_to_float(pid_i_calibrated_value)
         );
         regulator.configure();
 

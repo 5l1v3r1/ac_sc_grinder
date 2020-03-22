@@ -69,8 +69,8 @@ uint32_t truncated_mean(uint16_t *src, uint8_t count, fix16_t window)
 
         if ((mean - val) * (mean - val) < sigma_win_square)
         {
-        s_mean_filtered += val;
-        s_mean_filtered_cnt++;
+            s_mean_filtered += val;
+            s_mean_filtered_cnt++;
         }
     }
 

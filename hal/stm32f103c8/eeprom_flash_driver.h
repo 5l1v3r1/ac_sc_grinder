@@ -3,8 +3,8 @@
 
 #include "main.h"
 
-// 2K page for stm32f072 => 2K bank => 4K total
-#define EEPROM_EMU_BANK_SIZE   (FLASH_PAGE_SIZE*1)
+// 1K page for stm32f103 => 2K bank => 4K total
+#define EEPROM_EMU_BANK_SIZE   (FLASH_PAGE_SIZE*2) // Single page size 1K
 #define EEPROM_EMU_FLASH_START (FLASH_BANK1_END + 1 - EEPROM_EMU_BANK_SIZE*2)
 /*
 #define XSTR(x) STR(x)

@@ -7,6 +7,7 @@
 
 
 #include <stdio.h>
+#include <string.h>
 
 /*void mem_dump(EepromEmu<EepromFlashDriver> &eeprom)
 {
@@ -27,12 +28,12 @@
 
 
 void test_eeprom_write() {
-    EepromEmu<EepromFlashDriver> eeprom;
+    EepromEmu<EepromFlashDriver, 0x4499> eeprom;
 
     eeprom.write_u32(3, 0x0000AA99);
     // bank Marker + address + value
     uint8_t expected[] = {
-        0xEE, 0x77, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // Bank header
+        0xEE, 0x77, 0xFF, 0xFF, 0x99, 0x44, 0xFF, 0xFF, // Bank header
         0xAA, 0x55,                 // commit mark
         0x03, 0x00,                 // addr
         0x99, 0xAA, 0x00, 0x00,     // data
@@ -42,13 +43,13 @@ void test_eeprom_write() {
 }
 
 void test_eeprom_write_over() {
-    EepromEmu<EepromFlashDriver> eeprom;
+    EepromEmu<EepromFlashDriver, 0x4499> eeprom;
 
     eeprom.write_u32(3, 0x0000AA99);
     eeprom.write_u32(3, 0x5577CCEE);
 
     uint8_t expected[] = {
-        0xEE, 0x77, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // Bank header
+        0xEE, 0x77, 0xFF, 0xFF, 0x99, 0x44, 0xFF, 0xFF, // Bank header
         0xAA, 0x55,                 // commit mark
         0x03, 0x00,                 // addr
         0x99, 0xAA, 0x00, 0x00,     // data
@@ -61,7 +62,7 @@ void test_eeprom_write_over() {
 }
 
 void test_eeprom_write_skip_the_same() {
-    EepromEmu<EepromFlashDriver> eeprom;
+    EepromEmu<EepromFlashDriver, 0x4499> eeprom;
 
     eeprom.write_u32(3, 0x0000AA99);
     eeprom.write_u32(3, 0x0000AA99);
@@ -69,7 +70,7 @@ void test_eeprom_write_skip_the_same() {
 
     // Only 2 records should exist (1 old + 1 new)
     uint8_t expected[] = {
-        0xEE, 0x77, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // Bank header
+        0xEE, 0x77, 0xFF, 0xFF, 0x99, 0x44, 0xFF, 0xFF, // Bank header
         0xAA, 0x55,                 // commit mark
         0x03, 0x00,                 // addr
         0x99, 0xAA, 0x00, 0x00,     // data
@@ -90,8 +91,36 @@ void test_eeprom_read() {
     TEST_ASSERT_EQUAL_HEX32(0x5577CCEE, eeprom.read_u32(3, 0));
 }
 
+void test_eeprom_version_match() {
+    EepromEmu<EepromFlashDriver, 0x4499> eeprom;
+
+    // bank Marker + address + value
+    uint8_t raw_content[] = {
+        0xEE, 0x77, 0xFF, 0xFF, 0x99, 0x44, 0xFF, 0xFF, // Bank header
+        0xAA, 0x55,                 // commit mark
+        0x03, 0x00,                 // addr
+        0x99, 0xAA, 0x00, 0x00,     // data
+        0xFF // free space start
+    };
+    memcpy(eeprom.flash.memory, raw_content, sizeof(raw_content));
+
+    // Correct version tag should allow data use
+    TEST_ASSERT_EQUAL_HEX32(0x0000AA99, eeprom.read_u32(3, 0));
+
+    EepromEmu<EepromFlashDriver, 0x6633> eeprom2;
+    memcpy(eeprom2.flash.memory, raw_content, sizeof(raw_content));
+
+    // Wrong version should invalidate data
+    TEST_ASSERT_EQUAL_HEX32(0x00000000, eeprom2.read_u32(3, 0));
+    // Make sure eeprom operations are ok
+    eeprom2.write_u32(3, 0x0000AA99);
+    TEST_ASSERT_EQUAL_HEX32(0x0000AA99, eeprom2.read_u32(3, 0));
+
+}
+
+
 void test_eeprom_bank_move() {
-    EepromEmu<EepromFlashDriver> eeprom;
+    EepromEmu<EepromFlashDriver, 0x4499> eeprom;
 
     uint8_t empty[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
@@ -119,7 +148,7 @@ void test_eeprom_bank_move() {
 
     // New bank should contain only 2 records
     uint8_t expected[] = {
-        0xEE, 0x77, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // Bank header
+        0xEE, 0x77, 0xFF, 0xFF, 0x99, 0x44, 0xFF, 0xFF, // Bank header
         0xAA, 0x55,                 // commit mark
         0x07, 0x00,                 // addr
         0x00, 0x00, 0x00, 0x00,     // data
@@ -141,6 +170,7 @@ void test_eeprom_float() {
 }
 
 
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_eeprom_write);
@@ -149,6 +179,7 @@ int main() {
     RUN_TEST(test_eeprom_read);
     RUN_TEST(test_eeprom_bank_move);
     RUN_TEST(test_eeprom_float);
+    RUN_TEST(test_eeprom_version_match);
     return UNITY_END();
 }
 

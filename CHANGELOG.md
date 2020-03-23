@@ -12,7 +12,8 @@
 - Reworked stm32cubemx integration. Keep full sources to avoid conflicts with
   outdated PlatformIO's version. Removed all places with tight-coupled code.
 - Added alternate HAL entry for new upcoming PCB.
-- Added build-ability tests on Travis-CI, for different OS-es.
+- New EEPROM emulator.
+- Added build tests on Travis-CI for MacOS & Win.
 
 
 1.0.0 / 2019-08-01

@@ -25,9 +25,9 @@ public:
 
     Bank Marker:
 
-    - [ 0x77EE, 0xFFFF,    0xFFFF, 0xFFFF ] => active, current
-    - [ 0x77EE, NOT_EMPTY, 0xFFFF, 0xFFFF ] => ready to erase (!active)
-    - [ 0xFFFF, 0xFFFF,    0xFFFF, 0xFFFF ] => erased OR on progress of transfer
+    - [ 0x77EE, 0xFFFF,    VERSION, 0xFFFF ] => active, current
+    - [ 0x77EE, NOT_EMPTY, VERSION, 0xFFFF ] => ready to erase (!active)
+    - [ 0xFFFF, 0xFFFF,    0xFFFF,  0xFFFF ] => erased OR on progress of transfer
 
     Data record:
 
@@ -40,7 +40,7 @@ public:
     Value 0x55AA at record start means write was completed with success
 */
 
-template <typename FLASH_DRIVER>
+template <typename FLASH_DRIVER, uint16_t VERSION = 0xCC33>
 class EepromEmu
 {
     enum {
@@ -68,7 +68,7 @@ class EepromEmu
     {
         if ((flash.read_u16(bank, 0) == BANK_MARK) &&
             (flash.read_u16(bank, 2) == EMPTY) &&
-            (flash.read_u16(bank, 4) == EMPTY) &&
+            (flash.read_u16(bank, 4) == VERSION) &&
             (flash.read_u16(bank, 6) == EMPTY)) return true;
 
         return false;
@@ -135,13 +135,13 @@ class EepromEmu
 
         // Mark new bank active
         flash.write_u16(to, 0, BANK_MARK);
+        flash.write_u16(to, 4, VERSION);
 
         current_bank = to;
         next_write_offset = dst_end_addr;
 
         // Clean old bank in 2 steps to avoid UB: destroy header & run erase
         flash.write_u16(from, 2, BANK_DIRTY_MARK);
-        flash.write_u16(from, 4, BANK_DIRTY_MARK);
         flash.write_u16(from, 6, BANK_DIRTY_MARK);
         flash.erase(from);
     }
@@ -157,6 +157,7 @@ class EepromEmu
             // Both banks have no valid markers => prepare first one
             if (!is_clear(0)) flash.erase(0);
             flash.write_u16(0, 0, BANK_MARK);
+            flash.write_u16(0, 4, VERSION);
             current_bank = 0;
         }
 

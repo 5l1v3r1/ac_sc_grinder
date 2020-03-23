@@ -10,7 +10,8 @@
 #include "regulator.h"
 #include "calibrator/calibrator.h"
 
-EepromEmu<EepromFlashDriver> eeprom;
+// Note: update version tag to reset old data
+EepromEmu<EepromFlashDriver, 0x0001> eeprom;
 
 Io io;
 Meter meter;

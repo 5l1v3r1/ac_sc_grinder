@@ -4,9 +4,24 @@
 #include <stdbool.h>
 #include <setjmp.h>
 
-#define YIELD_USE_LABELS
+#ifdef YIELD_USE_JMP
 
-#ifdef YIELD_USE_LABELS
+struct _yield_state_t {
+    jmp_buf env;
+    bool yielded;
+};
+
+#define YIELDABLE \
+    static struct _yield_state_t _yield_state; \
+    if (_yield_state.yielded) longjmp(_yield_state.env, 1); \
+
+#define YIELD(val) \
+    do { \
+        if (!setjmp(_yield_state.env)) { _yield_state.yielded = true; return val; } \
+        else _yield_state.yielded = false; \
+    } while (0)
+
+#else
 
 struct _yield_state_t {
     void *yield_ptr;
@@ -28,23 +43,6 @@ struct _yield_state_t {
         return val; \
         _yield_label: \
         _yield_state.yielded = true; \
-    } while (0)
-
-#else
-
-struct _yield_state_t {
-    jmp_buf env;
-    bool yielded;
-};
-
-#define YIELDABLE \
-    static struct _yield_state_t _yield_state; \
-    if (_yield_state.yielded) longjmp(_yield_state.env, 1); \
-
-#define YIELD(val) \
-    do { \
-        if (!setjmp(_yield_state.env)) { _yield_state.yielded = true; return val; } \
-        else _yield_state.yielded = false; \
     } while (0)
 
 #endif

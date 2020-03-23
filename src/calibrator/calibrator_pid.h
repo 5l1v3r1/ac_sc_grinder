@@ -6,7 +6,7 @@
 
 #include <limits.h>
 #include <cmath>
-
+#include "etl/cyclic_value.h"
 
 #define MIN_P 1.0
 #define INIT_P_ITERATION_STEP 4.0
@@ -69,17 +69,15 @@ public:
         //
 
         io.setpoint = F16(LOW_SPEED_SETPOINT);
-
         speed_tracker.reset();
 
-        do
+        while (!speed_tracker.is_stable_or_exceeded())
         {
             YIELD(false);
-
             if (!io_data.zero_cross_up) continue;
 
             speed_tracker.push(meter.speed);
-        } while (!speed_tracker.is_stable_or_exceeded());
+        }
 
         //
         // Apply high speed power and record process of speed rise,
@@ -87,17 +85,15 @@ public:
         //
 
         io.setpoint = F16(HIGH_SPEED_SETPOINT);
-
         speed_tracker.reset();
         speed_data_idx = 0;
         start_time_ticks = 0;
-        start_stop_scaler_cnt = 0;
+        start_stop_scaler_cyclic_cnt = 0;
 
-        do
+        while (!speed_tracker.is_stable_or_exceeded())
         {
             YIELD(false);
             start_time_ticks++;
-
             if (!io_data.zero_cross_up) continue;
 
             if (speed_data_idx < speed_data_length)
@@ -111,34 +107,30 @@ public:
                     (speed_data_idx == 0) ? meter.speed : filtered_speed
                 );
 
-                if (start_stop_scaler_cnt == 0) {
+                if (start_stop_scaler_cyclic_cnt++ == 0) {
                     start_speed_data[speed_data_idx++] = filtered_speed;
                 }
-
-                start_stop_scaler_cnt++;
-                if (start_stop_scaler_cnt == SPEED_DATA_SAVE_RATIO) start_stop_scaler_cnt = 0;
             }
 
             speed_tracker.push(meter.speed);
-        } while (!speed_tracker.is_stable_or_exceeded());
+        }
+
+        start_speed_data_len = speed_data_idx;
 
         //
         // Now measure stop time (reverse process)
         //
 
-        start_speed_data_len = speed_data_idx;
-
         io.setpoint = F16(LOW_SPEED_SETPOINT);
-
         speed_tracker.reset();
         speed_data_idx = 0;
         stop_time_ticks = 0;
-        start_stop_scaler_cnt = 0;
+        start_stop_scaler_cyclic_cnt = 0;
 
-        do {
+        while (!speed_tracker.is_stable_or_exceeded())
+        {
             YIELD(false);
             stop_time_ticks++;
-
             if (!io_data.zero_cross_up) continue;
 
             if (speed_data_idx < speed_data_length)
@@ -152,18 +144,16 @@ public:
                     (speed_data_idx == 0) ? meter.speed : filtered_speed
                 );
 
-                if (start_stop_scaler_cnt == 0) {
+                if (start_stop_scaler_cyclic_cnt++ == 0) {
                     stop_speed_data[speed_data_idx++] = filtered_speed;
                 }
-
-                start_stop_scaler_cnt++;
-                if (start_stop_scaler_cnt == SPEED_DATA_SAVE_RATIO) start_stop_scaler_cnt = 0;
             }
 
             speed_tracker.push(meter.speed);
-        } while (!speed_tracker.is_stable_or_exceeded());
+        }
 
         stop_speed_data_len = speed_data_idx;
+
         motor_start_stop_time = calculate_start_stop_time(
             start_speed_data_len,
             start_speed_data,
@@ -183,32 +173,30 @@ public:
         // TODO - Measure period duration for correct operation at 50 and 60 Hz
         measure_amplitude_ticks_max = fix16_to_int(motor_start_stop_time * 50);
 
+        // Set PID_I to max reasonable value
         regulator.cfg_pid_i_inv = fix16_div(
             F16(1.0 / APP_PID_FREQUENCY),
             motor_start_stop_time
         );
 
-        do {
+        while (iterations_count < max_iterations)
+        {
             speed_tracker.reset();
 
-            do {
-                // Wait for stable speed with minimal
-                // PID_P and maximal PID_I
-                regulator.cfg_pid_p = F16(MIN_P);
-                regulator.cfg_pid_i_inv = fix16_div(
-                    F16(1.0 / APP_PID_FREQUENCY),
-                    motor_start_stop_time
-                );
+            // Wait for stable speed with minimal
+            // PID_P and maximal PID_I
+            regulator.cfg_pid_p = F16(MIN_P);
 
+            while (!speed_tracker.is_stable_or_exceeded())
+            {
                 regulator.tick(F16(PID_P_SETPOINT), meter.speed);
                 io.setpoint = regulator.out_power;
 
                 YIELD(false);
-
                 if (!io_data.zero_cross_up) continue;
 
                 speed_tracker.push(meter.speed);
-            } while (!speed_tracker.is_stable_or_exceeded());
+            };
 
             //
             // Measure amplitude
@@ -221,12 +209,12 @@ public:
             median_filter.reset();
             ticks_cnt = 0;
 
-            do {
+            while (measure_amplitude_ticks < measure_amplitude_ticks_max)
+            {
                 regulator.tick(F16(PID_P_SETPOINT), meter.speed);
                 io.setpoint = regulator.out_power;
 
                 YIELD(false);
-
                 if (!io_data.zero_cross_up) continue;
 
                 ticks_cnt++;
@@ -249,32 +237,29 @@ public:
                 }
 
                 measure_amplitude_ticks++;
+            }
 
-                if (measure_amplitude_ticks >= measure_amplitude_ticks_max)
-                {
-                    fix16_t amplitude = measure_amplitude_max_speed - measure_amplitude_min_speed;
+            fix16_t amplitude = measure_amplitude_max_speed - measure_amplitude_min_speed;
 
-                    // Save amplitude of first iteration as reference
-                    // to compare values of next iterations to this value
-                    if (iterations_count == 0) first_iteration_amplitude = amplitude;
+            // Save amplitude of first iteration as reference
+            // to compare values of next iterations to this value
+            if (iterations_count == 0) first_iteration_amplitude = amplitude;
 
-                    // If amplitude is less than margin value
-                    // step for next iteration should be positive,
-                    // otherwise - negative
-                    if (amplitude <= fix16_mul(first_iteration_amplitude, F16(MAX_AMPLITUDE)))
-                    {
-                        iteration_step = abs(iteration_step);
-                    }
-                    else iteration_step = -abs(iteration_step);
+            // If amplitude is less than margin value
+            // step for next iteration should be positive,
+            // otherwise - negative
+            if (amplitude <= fix16_mul(first_iteration_amplitude, F16(MAX_AMPLITUDE)))
+            {
+                iteration_step = abs(iteration_step);
+            }
+            else iteration_step = -abs(iteration_step);
 
-                    pid_param_attempt_value += iteration_step;
+            pid_param_attempt_value += iteration_step;
 
-                    iteration_step /= 2;
-                    iterations_count++;
-                    break;
-                }
-            } while (1);
-        } while (iterations_count < max_iterations);
+            iteration_step /= 2;
+            iterations_count++;
+
+        }
 
         pid_p_calibrated_value = fix16_mul(pid_param_attempt_value, F16(PID_SAFETY_SCALE));
 
@@ -297,29 +282,28 @@ public:
         // for reability of measurement.
         measure_overshoot_ticks_max = fix16_to_int(motor_start_stop_time * 50);
 
-        regulator.cfg_pid_p = pid_p_calibrated_value;
-
-        do {
+        while (iterations_count < max_iterations)
+        {
             speed_tracker.reset();
 
-            do {
-                // Wait for stable speed with minimal
-                // PID_P and maximal PID_I
-                regulator.cfg_pid_p = F16(MIN_P);
-                regulator.cfg_pid_i_inv = fix16_div(
-                    F16(1.0 / APP_PID_FREQUENCY),
-                    motor_start_stop_time / 2
-                );
+            // Wait for stable speed with minimal
+            // PID_P and maximal PID_I
+            regulator.cfg_pid_p = F16(MIN_P);
+            regulator.cfg_pid_i_inv = fix16_div(
+                F16(1.0 / APP_PID_FREQUENCY),
+                motor_start_stop_time / 2
+            );
 
+            while (!speed_tracker.is_stable_or_exceeded())
+            {
                 regulator.tick(F16(PID_I_START_SETPOINT), meter.speed);
                 io.setpoint = regulator.out_power;
 
                 YIELD(false);
-
                 if (!io_data.zero_cross_up) continue;
 
                 speed_tracker.push(meter.speed);
-            } while (!speed_tracker.is_stable_or_exceeded());
+            }
 
             //
             // Measure overshoot
@@ -334,12 +318,12 @@ public:
             measure_overshoot_ticks = 0;
             overshoot_speed = 0;
 
-            do {
+            while (measure_overshoot_ticks < measure_overshoot_ticks_max)
+            {
                 regulator.tick(F16(PID_I_OVERSHOOT_SETPOINT), meter.speed);
                 io.setpoint = regulator.out_power;
 
                 YIELD(false);
-
                 if (!io_data.zero_cross_up) continue;
 
                 measure_overshoot_ticks++;
@@ -355,32 +339,28 @@ public:
 
                 // Find max speed value
                 if (overshoot_speed < filtered_speed) overshoot_speed = filtered_speed;
-                if (measure_overshoot_ticks >= measure_overshoot_ticks_max)
-                {
-                    // Save overshoot of first iteration as reference
-                    // to compare next iterations values to this value
-                    if (iterations_count == 0) first_iteration_overshoot_speed = overshoot_speed;
+            }
 
-                    fix16_t overshoot = fix16_div(
-                        overshoot_speed - first_iteration_overshoot_speed,
-                        first_iteration_overshoot_speed
-                    );
+            // Save overshoot of first iteration as reference
+            // to compare next iterations values to this value
+            if (iterations_count == 0) first_iteration_overshoot_speed = overshoot_speed;
 
-                    // If overshoot is greater than margin value
-                    // step for next iteration should be positive,
-                    // otherwise - negative
-                    if (overshoot > F16(MAX_OVERSHOOT)) iteration_step = abs(iteration_step);
-                    else iteration_step = -abs(iteration_step);
+            fix16_t overshoot = fix16_div(
+                overshoot_speed - first_iteration_overshoot_speed,
+                first_iteration_overshoot_speed
+            );
 
-                    pid_param_attempt_value += iteration_step;
+            // If overshoot is greater than margin value
+            // step for next iteration should be positive,
+            // otherwise - negative
+            if (overshoot > F16(MAX_OVERSHOOT)) iteration_step = abs(iteration_step);
+            else iteration_step = -abs(iteration_step);
 
-                    iteration_step /= 2;
-                    iterations_count++;
+            pid_param_attempt_value += iteration_step;
 
-                    break;
-                }
-            } while (1);
-        } while (iterations_count < max_iterations);
+            iteration_step /= 2;
+            iterations_count++;
+        }
 
         pid_i_calibrated_value = fix16_div(pid_param_attempt_value, F16(PID_SAFETY_SCALE));
 
@@ -424,7 +404,7 @@ private:
     int speed_data_idx = 0;
     int start_time_ticks = 0;
     int stop_time_ticks = 0;
-    int start_stop_scaler_cnt;
+    etl::cyclic_value<uint32_t, 0, SPEED_DATA_SAVE_RATIO - 1> start_stop_scaler_cyclic_cnt;
     fix16_t filtered_speed = 0;
 
     fix16_t prev_speed = 0;

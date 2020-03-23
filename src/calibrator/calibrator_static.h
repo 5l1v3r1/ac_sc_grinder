@@ -34,13 +34,9 @@ public:
         io.setpoint = 0;
         r_interp_table_index = 0;
 
-        while (ticks_cnt++ < (2 * APP_TICK_FREQUENCY)) {
-            YIELD(false);
-        }
+        YIELD_WHILE((ticks_cnt++ < (2 * APP_TICK_FREQUENCY)), false);
 
-        while (!io_data.zero_cross_up) {
-            YIELD(false);
-        }
+        YIELD_UNTIL(io_data.zero_cross_up, false);
 
         buffer_idx = 0;
 
@@ -50,6 +46,8 @@ public:
 
         while (!io_data.zero_cross_down) {
             YIELD(false);
+
+            // TODO: bounds check
             voltage_buffer[buffer_idx] = fix16_to_float(io_data.voltage);
             current_buffer[buffer_idx] = fix16_to_float(io_data.current);
             buffer_idx++;
@@ -61,41 +59,38 @@ public:
         // Measure checkpoints
         //
 
-        do {
+        while (r_interp_table_index < CFG_R_INTERP_TABLE_LENGTH)
+        {
             r_stability_filter.reset();
 
             //
             // Measure single checkpoint until result stable
             // Reinitialize and 0.5 sec pause before start
             //
-            do {
+            while (!r_stability_filter.is_stable())
+            {
                 buffer_idx = 0;
                 zero_cross_down_offset = 0;
 
-                while (ticks_cnt++ < (APP_TICK_FREQUENCY / 2)) {
-                    io.setpoint = 0;
-                    YIELD(false);
-                }
+                io.setpoint = 0;
+
+                YIELD_WHILE((ticks_cnt++ < (APP_TICK_FREQUENCY / 2)), false);
 
                 // Calibration should be started at the begining of positive period
-
-                while (!io_data.zero_cross_up) {
-                    YIELD(false);
-                }
+                YIELD_UNTIL(io_data.zero_cross_up, false);
 
                 //
                 // Record positive wave
                 //
 
-                while (!io_data.zero_cross_down) {
-                    io.setpoint = meter.cfg_r_table_setpoints[r_interp_table_index];
+                io.setpoint = meter.cfg_r_table_setpoints[r_interp_table_index];
 
+                while (!io_data.zero_cross_down) {
                     // Safety check. Restart on out of bounds.
                     if (buffer_idx >= calibrator_rl_buffer_length) return false;
 
                     voltage_buffer[buffer_idx] = fix16_to_float(io_data.voltage);
                     current_buffer[buffer_idx] = fix16_to_float(io_data.current);
-
                     buffer_idx++;
 
                     YIELD(false);
@@ -108,13 +103,12 @@ public:
                 // (buffer ended or next zero cross found),
                 //
 
-                while (!io_data.zero_cross_up && buffer_idx < calibrator_rl_buffer_length) {
-                    io.setpoint = 0;
+                io.setpoint = 0;
 
+                while (!io_data.zero_cross_up && buffer_idx < calibrator_rl_buffer_length) {
                     // Record current & emulate voltage
                     voltage_buffer[buffer_idx] = - voltage_buffer[buffer_idx - zero_cross_down_offset];
                     current_buffer[buffer_idx] = fix16_to_float(io_data.current);
-
                     buffer_idx++;
 
                     YIELD(false);
@@ -125,24 +119,19 @@ public:
                 // setpoint
                 //
 
-                while (!io_data.zero_cross_down) {
-                    YIELD(false);
-                }
+                YIELD_UNTIL(io_data.zero_cross_down, false);
 
-                while (!io_data.zero_cross_up) {
-                    io.setpoint = meter.cfg_r_table_setpoints[r_interp_table_index];
-                    YIELD(false);
-                }
+                io.setpoint = meter.cfg_r_table_setpoints[r_interp_table_index];
+
+                YIELD_UNTIL(io_data.zero_cross_up, false);
+
+                io.setpoint = 0;
 
                 // Process collected data. That may take a lot of time, but we don't care
                 // about triac at this moment
-
-                io.setpoint = 0;
-                YIELD(false);
-
                 r_stability_filter.push(fix16_from_float(calculate_r()));
 
-            } while (!r_stability_filter.is_stable());
+            }
 
             r_interp_result[r_interp_table_index++] = r_stability_filter.average();
 
@@ -155,7 +144,7 @@ public:
                 r_interp_result[r_interp_table_index++] = r_interp_result[CFG_R_INTERP_TABLE_LENGTH - 2];
             }
 
-        } while (r_interp_table_index < CFG_R_INTERP_TABLE_LENGTH);
+        }
 
         // Write result to EEPROM
         for (uint32_t i = 0; i < CFG_R_INTERP_TABLE_LENGTH; i++)

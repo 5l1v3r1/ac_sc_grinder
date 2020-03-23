@@ -32,14 +32,13 @@ public:
             speed_tracker.reset();
 
             // Wait for stable speed
-            do
+            while (!speed_tracker.is_stable_or_exceeded())
             {
                 YIELD(false);
-
                 if (!io_data.zero_cross_up) continue;
 
                 speed_tracker.push(meter.speed);
-            } while (!speed_tracker.is_stable_or_exceeded());
+            }
 
             // Save rpm value for current setpoint
             rpms[setpoint_idx] = fix16_to_float(speed_tracker.average());
@@ -54,10 +53,7 @@ public:
         io.setpoint = 0;
         ticks_cnt = 0;
 
-        while (ticks_cnt++ < 1 * APP_TICK_FREQUENCY)
-        {
-            YIELD(false);
-        }
+        YIELD_WHILE((ticks_cnt++ < 1 * APP_TICK_FREQUENCY), false);
 
         return true;
     }

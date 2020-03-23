@@ -29,52 +29,51 @@ public:
     bool tick(io_data_t &io_data) {
         YIELDABLE;
 
-        do {
+        // Try endless
+        while (1)
+        {
             // First, check knob is at sstart position (zero),
             // prior to start detect dial sequence
             ticks_cnt = 0;
-            dials_cnt = 0;
 
             while (IS_KNOB_LOW(io_data.knob)) {
-                ticks_cnt++;
                 YIELD(false);
+                ticks_cnt++;
             }
 
             if (ticks_cnt < knob_wait_min) continue;
 
-            // If knob is zero long enougth => can start detect dials
+            // If knob is zero long enough => can start detect dials
+            dials_cnt = 0;
 
-            do {
+            while (1) {
                 // Measure UP interval
                 ticks_cnt = 0;
 
                 while (IS_KNOB_HIGH(io_data.knob)) {
-                    ticks_cnt++;
                     YIELD(false);
+                    ticks_cnt++;
                 }
 
-                // Terminate on invalid length
+                // Resart on invalid length
                 if (ticks_cnt < knob_wait_min || ticks_cnt > knob_wait_max) break;
 
-                dials_cnt++;
-
-                // Terminate on success
-                if (dials_cnt >= 3) break;
+                // Finish on success
+                // (return without YIELD also resets state to start)
+                if (++dials_cnt >= 3) return true;
 
                 // Measure DOWN interval
                 ticks_cnt = 0;
 
                 while (IS_KNOB_LOW(io_data.knob)) {
-                    ticks_cnt++;
                     YIELD(false);
+                    ticks_cnt++;
                 }
 
-                // Terminate on invalid length
+                // Restart on invalid length
                 if (ticks_cnt < knob_wait_min || ticks_cnt > knob_wait_max) break;
-            } while (1);
-        } while (dials_cnt < 3);
-
-        return true;
+            }
+        }
     }
 
 private:

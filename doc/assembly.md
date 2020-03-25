@@ -16,14 +16,12 @@ Device assembly <!-- omit in toc -->
 -----|-------------|--------
 1 | [Hilda 180W](https://www.aliexpress.com/af/hilda-180w.html?SortType=total_tranpro_desc) grinder | Such grinders are available under other labels. Any, exactly as on photos below, will be ok.
 2 | [PCB & Components](https://easyeda.com/speed/AC-speed-control-for-grinder) | Go to EasyEda project page and order both in couple of clicks. If you order PCB first, components second, then you will be able to join delivery and save some bucks.
-3 | [Cheap ST-link/V2 programmer](https://www.aliexpress.com/af/st-link-v2.html?SortType=total_tranpro_desc) | Required to upload firmware, only 2$. You can also order it at [LCSC](https://lcsc.com/search?q=st-link) with other components.
-4 | PCB protective coating | [Plastik 70 CRC](https://www.google.com/search?q=Plastik+70+CRC) or any other acrylic [insulating lacquer](https://www.google.com/search?q=insulating+lacquer).
-5 | [Male](https://www.aliexpress.com/item/-/32700932502.html) & [female](https://www.aliexpress.com/item/-/32593170276.html) 2.8x0.5mm power terminals | Optional. You can solder power wires directly.
-6 | [22 AWG wire](https://www.aliexpress.com/item/32854919883.html) | Stainless steel, for SMT stencil only. Position over PCB, via reference holes.
+3 | PCB protective coating | [Plastik 70 CRC](https://www.google.com/search?q=Plastik+70+CRC) or any other acrylic [insulating lacquer](https://www.google.com/search?q=insulating+lacquer).
+4 | [Male](https://www.aliexpress.com/item/-/32700932502.html) & [female](https://www.aliexpress.com/item/-/32593170276.html) 2.8x0.5mm power terminals | Optional. You can solder power wires directly.
+5 | [22 AWG wire](https://www.aliexpress.com/item/32854919883.html) | Stainless steel, for SMT stencil only. Position over PCB, via reference holes.
 
 Note, if you have soldering air gun, it's good idea to order SMT stencil to
 simplify assembly. Select custom stencil size 100*100mm for cheap delivery.
-
 
 **Optional parts**
 
@@ -40,7 +38,8 @@ tacho, wireless logger, SWD debug.
 6 | [1.27mm 8 pin female conn](https://lcsc.com/product-detail/Pin-Header-Female-Header_BOOMELE-Boom-Precision-Elec-C92297_C92297.html) |
 7 | [1.27mm male pins](https://lcsc.com/product-detail/Pin-Header-Female-Header_BOOMELE-Boom-Precision-Elec-1-27mm-1x50P_C3408.html) |
 8 | [1.27mm pogo pins clip](https://www.aliexpress.com/item/32959606674.html) | SWD debug.
-
+9 | [Cheap ST-link/V2 programmer](https://www.aliexpress.com/af/st-link-v2.html?SortType=total_tranpro_desc) | For hardware debug. You can also order it at [LCSC](https://lcsc.com/search?q=st-link) with other components.
+10 | [USB isolator](https://www.aliexpress.com/af/usb-isolator.html) | MUST be used with ST-Link/V2.
 
 ## Extract some parts from original board
 

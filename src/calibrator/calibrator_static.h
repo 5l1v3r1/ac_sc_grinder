@@ -12,12 +12,8 @@
 #define R_MEASURE_ATTEMPTS 3
 
 // Array size to record up to half of current & voltage positive wave.
-// Full period is (APP_TICK_FREQUENCY / 50).
-//
-// I theory, we it would be enougth to save ~ 1/8 of voltage positive wave,
-// and calc the rest on the fly. That will save a lot of memory, but we have
-// no time for such optimization.
-constexpr int calibrator_rl_buffer_length = APP_TICK_FREQUENCY / 50;
+// For 50/60Hz, worst case + some reserve is (APP_TICK_FREQUENCY / 49).
+constexpr int calibrator_rl_buffer_length = APP_TICK_FREQUENCY / 49;
 
 
 class CalibratorStatic

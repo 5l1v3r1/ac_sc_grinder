@@ -16,9 +16,8 @@
 */
 
 // Buffer used for storage only positive half-wave values.
-// To prevent buffer overflow if supply frequency < 50 Hz
-// it's length is two 50-Hz half-waves
-constexpr int voltage_buffer_length = APP_TICK_FREQUENCY / 50;
+// But we use the same size as in calibrator (to share later).
+constexpr int voltage_buffer_length = APP_TICK_FREQUENCY / 49;
 
 class Meter
 {

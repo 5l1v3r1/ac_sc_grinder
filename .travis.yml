@@ -14,8 +14,8 @@ jobs:
           - platformio update
         script:
           # Test builds status
-          - platformio run -e hardware_usb
-          - platformio run -e hardware_old
+          - platformio run -e hardware_next_usb
+          - platformio run -e hardware_current
           # Run tests
           - platformio test -e test_native
       -
@@ -32,8 +32,8 @@ jobs:
           - platformio update
         script:
           # Test builds status
-          - platformio run -e hardware_usb
-          - platformio run -e hardware_old
+          - platformio run -e hardware_next_usb
+          - platformio run -e hardware_current
       -
         name: Windows
         os: windows           # Windows 10.0.17134 N/A Build 17134
@@ -47,5 +47,5 @@ jobs:
           - platformio update
         script:
           # Test builds status
-          - platformio run -v -e hardware_usb
-          - platformio run -e hardware_old
+          - platformio run -e hardware_next_usb
+          - platformio run -e hardware_current

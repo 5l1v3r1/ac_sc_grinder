@@ -33,7 +33,7 @@ tacho, wireless logger, SWD debug.
 1 | [Hall sensor](https://lcsc.com/product-detail/Magnetic-Sensors_HX-hengjiaxing-HX4913_C296270.html) | Tacho.
 2 | [Magnetic resin](https://www.aliexpress.com/item/33017302814.html) | Do magnetic mark for hall sensor.
 3 | [Magnetic field viewer](https://www.aliexpress.com/item/32967659973.html) |
-4 | [RF sender](https://lcsc.com/product-detail/Wireless-Modules_nRF24L01-wireless-module_C84802.html) | [Atlernate](https://www.aliexpress.com/item/32599246022.html). Logs transmitter.
+4 | [RF sender](https://lcsc.com/product-detail/Wireless-Modules_nRF24L01-wireless-module_C84802.html) | Logs transmitter. Note, similar modules from AliExpress have dofferent power pinout.
 5 | [RF receiver](https://www.aliexpress.com/item/4000112750588.html) | Logs receiver.
 6 | [1.27mm 8 pin female conn](https://lcsc.com/product-detail/Pin-Header-Female-Header_BOOMELE-Boom-Precision-Elec-C92297_C92297.html) |
 7 | [1.27mm male pins](https://lcsc.com/product-detail/Pin-Header-Female-Header_BOOMELE-Boom-Precision-Elec-1-27mm-1x50P_C3408.html) |
